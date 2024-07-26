@@ -1,0 +1,72 @@
+################################
+# * User and Group Managment * #
+################################
+- name: User and group managment.
+  hosts:
+    - mhost1
+    - mhost2
+    - mhost3
+    - mhost4
+  vars:
+    users_list:
+      - name: lori
+        id: 1001
+        memberof: admin
+
+      - name: leni
+        id: 1002
+        memberof: admin
+
+      - name: luan
+        id: 1003
+        memberof: admin
+
+    group_list:
+      - name: admin
+        id: 2000
+
+  tasks:
+    # 1A.- Create groups.
+    - name: "Create groups"
+      group:
+        name: "{{ item.name }}"
+        gid: "{{ item.id }}"
+        state: present
+      loop: "{{ group_list }}"
+      
+    # 1B.- Create users.
+    - name: "Create users"
+      user:
+        name: "{{ item.name }}"
+        uid: "{{ item.id }}"
+        create_home: true
+        home: "/home/{{ item.name }}"
+        shell: "/bin/bash"
+        password: "$6$vHi0SxMWuIh5QHTP$X1ITLrK2IWvABpm0miC9s/JP.RdKl7qrnRYOmTkjlk10wIIOc6ImXstF0BXJhcMyz.aSIkRsfK5TE2BE2WGxH."
+        password_expire_min: 7
+        password_expire_max: 21
+        state: present
+        groups:
+          - "{{ item.memberof }}"
+        append: true
+      loop: "{{ users_list }}"
+
+    # 2A.- Grant admins superuser privileges
+    - name: "Create admin sudoers file."
+      file:
+        path: "/etc/sudoers.d/admin.cfg"
+        state: touch
+    - name: "Grant privileges"
+      lineinfile:
+        path: "/etc/sudoers.d/admin.cfg"
+        state: present
+        line: "%admin ALL=(ALL) ALL"  
+    
+    # 2B.- Create shared folder.
+    - name: "Create shared folder and grant permisions."
+      file:
+        path: "/shared/admin"
+        state: directory
+        group: admin
+        owner: lori
+        mode: "u+rwx,g+rwx,o-rwx"
