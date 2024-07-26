@@ -1,0 +1,41 @@
+- name: Install Simple Apache Server
+  hosts:
+    - mhost3
+    - mhost4
+  tasks:
+    - name: Install Apache2 Server
+      dnf:
+        update_cache: true
+        name:
+          - httpd
+        state: latest
+
+    - name: Open port 80/tcp in firewall.
+      firewalld:
+        port: 80/tcp
+        state: enabled
+        zone: public
+
+    - name: Start and enable service.
+      systemd:
+        name: httpd.service
+        enabled: true
+        state: started
+
+    - name: Remove old index.html file.
+      file:
+        path: /var/www/html/index.html
+        state: absent
+        force: true
+
+    - name: Create new index.html file.
+      file:
+        path: /var/www/html/index.html
+        state: touch
+        mode: 0775
+
+    - name: Add content to index.html file.
+      lineinfile:
+        path: /var/www/html/index.html
+        state: present
+        line: "<h1>This is host {{ inventory_hostname }}</h1><h2>This is a test. If you see this message then you know that it is working.</h2><img src='https://www.hdwallpaper.nu/wp-content/uploads/2015/11/Spongebob_Squarepants_wallpaper_017.jpg' /img>"
