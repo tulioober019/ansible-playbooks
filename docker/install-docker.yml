@@ -1,0 +1,117 @@
+- name: "Install Docker"
+  hosts: localhost
+  become: True
+  gather_facts: True
+  vars:
+    # List of docker repos for linux systems.
+    repos:
+      # RedHat Repositories.
+      rhel:
+        # Docker stable repositories. Recommended for most users.
+        stable:
+          - shortname: "docker-ce-stable"
+            description: "Docker CE Stable - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/{{ ansible_architectuklore }}/stable"
+          - shortname: "docker-ce-stable-source"
+            description: "Docker CE Stable - Sources"
+            url: "https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/source/stable"
+
+        # Docker test repositories. Gives acess to latest versions of docker. Not recommended for production systems.
+        test:
+          - shortname: "docker-ce-test"
+            description: "Docker CE Test - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/test"
+          - shortname: "docker-ce-test-source"
+            description: "Docker CE Test - Sources"
+            url: "https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/source/test"
+
+        # Docker nightly repositories. Contains daily builds of docker. Not recommended for production systems.
+        nightly:
+          - shortname: "docker-ce-nightly"
+            description: "Docker CE Nightly - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/nightly"
+
+      # CentOS Repositories.
+      centos:
+        stable:
+          - shortname: "docker-ce-stable"
+            description: "Docker CE Stable - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/{{ ansible_architectuklore }}/stable"
+          - shortname: "docker-ce-stable-source"
+            description: "Docker CE Stable - Sources"
+            url: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/source/stable"
+
+        # Docker test repositories. Gives acess to latest versions of docker. Not recommended for production systems.
+        test:
+          - shortname: "docker-ce-test"
+            description: "Docker CE Test - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/test"
+          - shortname: "docker-ce-test-source"
+            description: "Docker CE Test - Sources"
+            url: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/source/test"
+
+        # Docker nightly repositories. Contains daily builds of docker. Not recommended for production systems.
+        nightly:
+          - shortname: "docker-ce-nightly"
+            description: "Docker CE Nightly - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/nightly"
+      
+      # Fedora repositories.
+      fedora:
+        stable:
+          - shortname: "docker-ce-stable"
+            description: "Docker CE Stable - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architectuklore }}/stable"
+          - shortname: "docker-ce-stable-source"
+            description: "Docker CE Stable - Sources"
+            url: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/source/stable"
+
+        # Docker test repositories. Gives acess to latest versions of docker. Not recommended for production systems.
+        test:
+          - shortname: "docker-ce-test"
+            description: "Docker CE Test - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/test"
+          - shortname: "docker-ce-test-source"
+            description: "Docker CE Test - Sources"
+            url: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/source/test"
+
+        # Docker nightly repositories. Contains daily builds of docker. Not recommended for production systems.
+        nightly:
+          - shortname: "docker-ce-nightly"
+            description: "Docker CE Nightly - {{ ansible_architecture }}"
+            url: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/nightly"
+      
+      # Debian Repositories.
+      debian:
+        
+  tasks:
+
+    # For RedHat systems, do these tasks.
+    - name: "Add official Docker repositories for RedHat based distros."
+      ansible.builtin.yum_repository:
+        name: "{{ item.shortname }}"
+        description: "{{ item.description }}"
+        baseurl: "{{ item.url }}"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://download.docker.com/linux/rhel/gpg"
+      when: ansible_os_family == "RedHat"
+      loop: "{{ repos.rhel.stable }}"
+    
+    - name: "Install Docker packages for RedHat based distros."
+      yum:
+        update_cache: True
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: "Start and enable Docker service."
+      systemd:
+        name: "docker.service"
+        state: started
+        enabled: True
